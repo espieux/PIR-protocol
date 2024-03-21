@@ -25,6 +25,7 @@ class Paillier:
         self.g = g
         self.lmbda = lcm
         self.mu = mu
+        self.public_key=(n,g)
         
     def L(self, x):
         # Calculate the L function
