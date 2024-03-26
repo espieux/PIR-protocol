@@ -33,10 +33,15 @@ def sign_message(key, bytes_message):
     return signer.sign(hash_obj)
 
 def verify_signature(public_key_filename, bytes_message, signature):
-    f = open(public_key_filename, "r")
-    public_key = DSA.importKey(f.read())
-    f.close()
+    with open(public_key_filename, "r") as f:
+        public_key = DSA.importKey(f.read())
 
-    hash_obj = SHA256.new(bytes_message)
     verifier = DSS.new(public_key, 'fips-186-3')
-    verifier.verify(hash_obj, signature)
+    hash_obj_verify = SHA256.new(bytes_message)
+    try:
+        verifier.verify(hash_obj_verify, signature)
+        print("The signature is valid.")
+        return True  # Return True to indicate success
+    except ValueError:
+        print("The signature is not valid.")
+        return False  # Return False to indicate failure

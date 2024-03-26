@@ -1,19 +1,27 @@
-import random  
+import random
+from utils import verify_signature
+import pickle
+
 class Server:
     def __init__(self, size):
         self.database = [random.randint(1, 2**16) for _ in range(size)]
         self.size = size
-    
-    def answerRequest(self, request_vector, public_key):
-        # Prepare the sum (initialize to 0 encrypted with the client's public key)
-        n, g = public_key
-        n_sq = n**2
-        encrypted_sum = pow(g, 0, n_sq)  # This is Enc(0) using the client's public key
+        
+    def answerRequest(self, request_vector, public_key, signature):
+        # Verify the client's signature directly with the provided public key
+        data_to_verify = pickle.dumps((request_vector, public_key))
+        
+        print("Verifying the signature...")
+        if verify_signature("client_public_key.pem", data_to_verify, signature):
+            # If verification succeeds, proceed with request processing
+            n, g = public_key
+            n_sq = n**2
+            encrypted_sum = pow(g, 0, n_sq)
 
-        # Homomorphically sum up the requested database value
-        for i in range(self.size):
-            # Use the propriety seen in question 4 to create a cyphertext = to m1*m2
-            encrypted_value=pow(request_vector[i],self.database[i],n_sq)
-            # Use the additive propriety to sum the cyphertexts
-            encrypted_sum = (encrypted_sum * encrypted_value) % n_sq
-        return encrypted_sum
+            for i in range(self.size):
+                encrypted_value = pow(request_vector[i], self.database[i], n_sq)
+                encrypted_sum = (encrypted_sum * encrypted_value) % n_sq
+            return encrypted_sum
+        else:
+            # If verification fails, raise an error
+            raise ValueError("Invalid signature")
